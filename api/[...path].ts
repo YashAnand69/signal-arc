@@ -80,6 +80,13 @@ async function webHandler(request: Request) {
       await db('signal_drafts', { method: 'POST', body: JSON.stringify(item) }); await db('signal_usage', { method: 'POST', body: JSON.stringify({ session_id: sessionId, event: 'draft.create', units: 1 }) });
       return json({ draft: item }, 200, cookie);
     }
+    if (request.method === 'PATCH' && path === 'drafts') {
+      const input = body as { id?: string; body?: string; status?: string };
+      if (!input.id || !/^[0-9a-f-]{36}$/i.test(input.id) || typeof input.body !== 'string' || input.body.trim().length < 20 || input.body.length > 12000 || !['review', 'reviewed'].includes(input.status || '')) return json({ error: 'Enter a valid draft, text, and review status.' }, 400, cookie);
+      const updated = await db(`signal_drafts?id=eq.${input.id}&session_id=eq.${sessionId}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ body: input.body, status: input.status, updated_at: new Date().toISOString() }) }) as Draft[];
+      if (!updated.length) return json({ error: 'Draft not found in this workspace.' }, 404, cookie);
+      return json({ draft: updated[0] }, 200, cookie);
+    }
     if (request.method === 'POST' && path === 'ingest') {
       const input = body as Partial<Job>; if (!input.company || !input.role || !input.description) return json({ error: 'company, role, and description are required.' }, 400, cookie);
       const item = { id: crypto.randomUUID(), slug: `custom-${crypto.randomUUID()}`, company: input.company, role: input.role, location: input.location || 'Remote', kind: input.kind || 'Full-time', salary: input.salary || 'Not listed', description: input.description, tags: input.tags || [], accent: input.accent || '#d5ff55' };

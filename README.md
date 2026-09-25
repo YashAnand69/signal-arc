@@ -4,10 +4,12 @@ Signal Arc is a career intelligence studio that turns a resume into a traceable 
 
 ## What is shipped
 
-- Premium dark interface with a responsive layout, animated Three.js orbit, scroll-reactive motion, role cards, evidence drawer, application desk, and API studio.
-- Full-stack Netlify Functions for profile parsing, role analysis, draft generation, custom job ingestion, and health checks.
-- Persistent site-scoped storage in Netlify Blobs for profiles, analyses, drafts, usage events, and ingested roles.
+- Premium responsive interface with a scroll-reactive, draggable Three.js orbit, accessible motion fallback, role cards, evidence drawer, application desk, and API studio.
+- Full-stack Vercel API for profile parsing, role analysis, draft creation and review, custom job ingestion, and health checks.
+- Persistent Supabase PostgreSQL storage for profiles, analyses, drafts, usage events, and roles. The API key stays on the server.
 - Deterministic scoring and reason generation so every recommendation is inspectable instead of a black box.
+
+The four starting roles are illustrative examples for exploring the product; they are not live job listings.
 
 ## Run locally
 
@@ -16,14 +18,13 @@ npm install
 npm run dev
 ```
 
-The Vite preview includes demo roles when the local function runtime is not running. To exercise the full API locally, use `netlify dev` after linking the site with the Netlify CLI.
+The Vite preview includes demo roles when the local API runtime is not running.
 
 ## Deploy
 
 ```bash
 npm run build
-netlify deploy --prod --build
+npx vercel deploy --prod
 ```
 
-The production site is deployed at [signal-arc-yash.netlify.app](https://signal-arc-yash.netlify.app).
-
+Set `SUPABASE_URL` and `SUPABASE_SECRET_KEY` as server environment variables. The production site is [signal-arc-yash.vercel.app](https://signal-arc-yash.vercel.app).
