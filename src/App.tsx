@@ -7,11 +7,17 @@ type Profile = { session_id: string; resume_text: string; full_name: string; hea
 type Analysis = { job_id: string; score: number; reasons: string[] };
 type Draft = { id: string; job_id: string; body: string; status: string };
 const sample = `Yash Anand\nProduct engineer & creative technologist\n\nI build full-stack products with React, TypeScript, Node, Python, Postgres, and Three.js. I care about design systems, API reliability, motion, observability, and turning complex workflows into clear experiences.\n\nSelected work: open-source workflow automation engine, AI review tooling, interactive 3D product sites.`;
+const demoJobs: Job[] = [
+  { id:'demo-lattice', company:'Lattice Systems', role:'Senior Frontend Engineer', location:'Remote · EU / India', kind:'Full-time', salary:'$145k — $180k', description:'Own the interface layer for a developer platform used by teams shipping critical infrastructure.', tags:['react','typescript','design systems'], accent:'#d5ff55' },
+  { id:'demo-northstar', company:'Northstar Labs', role:'Product Engineer', location:'Bengaluru · Hybrid', kind:'Full-time', salary:'₹36L — ₹52L', description:'Build fast experiments from customer insight to production across interface, data, and APIs.', tags:['react','product','api'], accent:'#ff8d66' },
+  { id:'demo-atlas', company:'Atlas AI', role:'AI Platform Engineer', location:'New York · Remote', kind:'Full-time', salary:'$155k — $210k', description:'Design reliable evaluation and observability loops for AI products.', tags:['python','llm','postgres'], accent:'#9b8cff' },
+  { id:'demo-morrow', company:'Morrow Studio', role:'Creative Technologist', location:'London · Hybrid', kind:'Contract', salary:'£500 — £700 / day', description:'Create expressive digital tools and prototypes that feel as good as they function.', tags:['three.js','motion','react'], accent:'#65d8ff' },
+];
 async function api(path: string, init?: RequestInit) { const r = await fetch(`/api/${path}`, { headers: { 'content-type': 'application/json' }, ...init }); const data = await r.json(); if (!r.ok) throw new Error(data.error || 'Something went wrong.'); return data; }
 
 export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null); const [resumeText, setResumeText] = useState(''); const [jobs, setJobs] = useState<Job[]>([]); const [analysis, setAnalysis] = useState<Analysis[]>([]); const [drafts, setDrafts] = useState<Draft[]>([]); const [usage, setUsage] = useState(0); const [view, setView] = useState<'overview'|'signal'|'desk'|'api'>('overview'); const [selected, setSelected] = useState<Job | null>(null); const [busy, setBusy] = useState(''); const [toast, setToast] = useState('');
-  useEffect(() => { api('bootstrap').then((d) => { setProfile(d.profile); setResumeText(d.profile?.resume_text || ''); setJobs(d.jobs); setAnalysis(d.analysis); setDrafts(d.drafts); setUsage(d.usageCount || 0); }).catch((e) => setToast(e.message)); }, []);
+  useEffect(() => { api('bootstrap').then((d) => { setProfile(d.profile); setResumeText(d.profile?.resume_text || ''); setJobs(d.jobs); setAnalysis(d.analysis); setDrafts(d.drafts); setUsage(d.usageCount || 0); }).catch(() => { setJobs(demoJobs); }); }, []);
   const scoreFor = (id: string) => analysis.find((item) => item.job_id === id);
   const sortedJobs = useMemo(() => [...jobs].sort((a,b) => (scoreFor(b.id)?.score || 0) - (scoreFor(a.id)?.score || 0)), [jobs, analysis]);
   async function saveProfile() { setBusy('profile'); try { const d = await api('profile', { method:'POST', body: JSON.stringify({ resumeText }) }); setProfile(d.profile); setUsage((x) => x + 1); setToast('Profile signal updated.'); } catch(e) { setToast((e as Error).message); } finally { setBusy(''); } }
