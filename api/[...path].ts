@@ -41,7 +41,7 @@ function withCookie(sessionId: string, existing: string) { return existing ? {} 
 async function ensureSession(sessionId: string) { await db('signal_sessions', { method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' }, body: JSON.stringify({ id: sessionId }) }); }
 async function getJobs(): Promise<Job[]> { let jobs = await db('signal_jobs?select=*') as Job[]; if (!jobs.length) { jobs = await db('signal_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(seedJobs) }) as Job[]; } return jobs; }
 
-export default async function handler(request: Request) {
+async function webHandler(request: Request) {
   try {
     const path = new URL(request.url).pathname.replace(/^\/api\/?/, '').replace(/\/$/, '');
     const body = request.method === 'GET' ? {} : await request.json().catch(() => ({}));
@@ -87,4 +87,17 @@ export default async function handler(request: Request) {
     }
     return json({ error: 'Route not found.' }, 404, cookie);
   } catch (error) { return json({ error: error instanceof Error ? error.message : 'Unexpected error.' }, 500); }
+}
+
+// Vercel's Node runtime uses the `(req, res)` contract for TypeScript API
+// functions. Keep the core request handling Web-standard so it remains easy
+// to exercise locally, then bridge the response to Node here.
+export default async function handler(req: any, res: any) {
+  const init: RequestInit = { method: req.method, headers: req.headers };
+  if (req.method !== 'GET' && req.method !== 'HEAD') init.body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
+  const request = new Request(`https://${req.headers.host || 'signal-arc-yash.vercel.app'}${req.url || '/'}`, init);
+  const response = await webHandler(request);
+  res.statusCode = response.status;
+  response.headers.forEach((value, key) => res.setHeader(key, value));
+  res.end(await response.text());
 }
