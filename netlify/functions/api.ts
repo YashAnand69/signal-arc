@@ -1,7 +1,7 @@
 import type { Handler } from '@netlify/functions';
 import { getStore } from '@netlify/blobs';
 
-const store = getStore('signal-arc');
+const store = getStore({ name: 'signal-arc-production', consistency: 'strong' });
 const cookieName = 'signal_session';
 const headers = { 'content-type': 'application/json', 'cache-control': 'no-store' };
 type Job = { id: string; slug: string; company: string; role: string; location: string; kind: string; salary: string; description: string; tags: string[]; accent: string };
