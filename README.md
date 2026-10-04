@@ -1,30 +1,39 @@
 # Signal Arc
 
-Signal Arc is a career intelligence studio that turns a resume into a traceable job search system. It combines the strongest ideas from the project briefs into one portfolio-ready product: structured resume signal, explainable role matching, editable application drafts, and a small API surface for future enrichment workflows.
+A complete career workspace: import a resume, compare opportunities against actual skill evidence, review application drafts, and track the search. The restrained Three.js background follows scroll and the active workspace without competing with the content.
 
-## What is shipped
+Live: https://signal-arc-yash.vercel.app/
 
-- Premium responsive interface with a scroll-reactive, draggable Three.js orbit, accessible motion fallback, role cards, evidence drawer, application desk, and API studio.
-- Full-stack Vercel API for profile parsing, role analysis, draft creation and review, custom job ingestion, and health checks.
-- Persistent Supabase PostgreSQL storage for profiles, analyses, drafts, usage events, and roles. The API key stays on the server.
-- Deterministic scoring and reason generation so every recommendation is inspectable instead of a black box.
+## Features
 
-The four starting roles are illustrative examples for exploring the product; they are not live job listings.
+- Google sign-in with Supabase Auth, plus email sign-in links. Guest work transfers to the account on sign-in; signed-in work is available across devices.
+- Browser-side PDF, DOCX, TXT and Markdown resume import, or direct text entry. Files are not uploaded: the user reviews extracted text before saving it.
+- Private custom roles with original listing links, searchable alongside four explicitly labeled sample roles.
+- Explainable skill-coverage matching with matched and missing evidence. Scores are deterministic comparisons, not hiring predictions or live-market recommendations.
+- Editable application drafts grounded in listed skills. Achievement placeholders must be replaced before marking a draft reviewed. Drafts can be copied or downloaded; nothing is sent automatically.
+- Application tracker with saved, applied, interview, offer and closed stages, private notes, deadlines, and CSV export.
+- JSON workspace export, clear-workspace controls, private role removal, connection/error states, and server-side input validation.
+- Persistent Supabase PostgreSQL storage behind a Vercel API. Google access tokens are verified server-side. Guest cookies are opaque, HttpOnly, Secure UUIDs. Account workspace IDs cannot be accessed using a guest cookie.
 
-## Run locally
+## Verification
 
-```bash
+```sh
 npm install
-npm run dev
-```
-
-The Vite preview includes demo roles when the local API runtime is not running.
-
-## Deploy
-
-```bash
 npm run build
-npx vercel deploy --prod
+npm test
+node scripts/verify-live.mjs
 ```
 
-Set `SUPABASE_URL` and `SUPABASE_SECRET_KEY` as server environment variables. The production site is [signal-arc-yash.vercel.app](https://signal-arc-yash.vercel.app).
+The last command creates isolated verification workspaces against the deployed API, exercises the complete guest flow and cross-session access controls, then clears its test data. Set `SIGNAL_ARC_URL` to verify a different deployment.
+
+`npm run dev` previews the interface. Full-stack API testing requires the Vercel runtime and configured server environments; a failed API is displayed explicitly rather than silently substituting a demo.
+
+## Deployment and operations
+
+GitHub main automatically deploys to the linked Vercel project. Set `SUPABASE_URL` and `SUPABASE_SECRET_KEY` as server-only environment variables. The publishable key is intentionally public and has no table privileges. SQL schema changes are committed under `supabase/migrations`.
+
+The database is shared with Flowline; Signal Arc uses its own `signal_*` tables. RLS is enabled and direct anon/authenticated table access is revoked. API ownership filters are enforced for guest and account workspaces. The claim function is invoker-security and executable only by the service role.
+
+Google is configured with the exact allowed return URL `https://signal-arc-yash.vercel.app/`. Email links rely on the Supabase email provider; its default service has delivery restrictions, so Google is the primary public sign-in method. Production email delivery at scale needs a custom SMTP service. Free Supabase projects can pause after inactivity; `/api/health` verifies the database rather than returning an unconditional success.
+
+No paid AI model, scraped job feed, automated applications, billing, or promised employment outcomes are implied. Matching and drafting are deterministic, transparent tools for the user's review.
