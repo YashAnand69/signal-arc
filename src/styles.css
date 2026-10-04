@@ -110,3 +110,5 @@
 @media(max-width:650px){.ambient-signal{inset:66px -48vw 0 auto;width:130vw;opacity:.2;mask-image:linear-gradient(90deg,transparent,#000 50%,#000)}.hero-intro{min-height:560px}.hero h1{font-size:clamp(55px,14vw,86px)}.hero-track .track-item{min-height:200px}.workspace{backdrop-filter:none;background:#0b0e12dd}}
 
 .hero-actions .primary{box-shadow:none;filter:none}.hero-actions .primary:hover{box-shadow:0 8px 24px #0003}
+
+.workspace{backdrop-filter:none}

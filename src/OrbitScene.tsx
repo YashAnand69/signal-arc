@@ -124,6 +124,7 @@ export function OrbitScene({ mode, hasProfile }: { mode: string; hasProfile: boo
       const workspaceMode = contextRef.current.mode;
       const expansion = Math.sin(scroll * Math.PI) * 0.45 * motion;
       const workspaceProgress = THREE.MathUtils.smoothstep(scroll, 0.7, 1);
+      host.style.opacity = String(1 - workspaceProgress * 0.55);
       sculpture.scale.setScalar(1 - workspaceProgress * 0.38);
       sculpture.position.y = workspaceProgress * 0.65;
       cage.visible = workspaceProgress < 0.98 || workspaceMode === 'signal';
