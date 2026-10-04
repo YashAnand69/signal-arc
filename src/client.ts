@@ -1,8 +1,16 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 let client: SupabaseClient | null = null;
-export async function authClient() {
-  if (!client) { const response = await fetch('/api/auth-config'); if (!response.ok) throw new Error('Login is temporarily unavailable.'); const config = await response.json(); client = createClient(config.url, config.key, { auth: { flowType: 'pkce', storageKey: 'signal-arc-auth' } }); }
-  return client;
+let initializing: Promise<SupabaseClient> | null = null;
+export function authClient(): Promise<SupabaseClient> {
+  if (client) return Promise.resolve(client);
+  if (!initializing) initializing = (async () => {
+    const response = await fetch('/api/auth-config');
+    if (!response.ok) throw new Error('Login is temporarily unavailable.');
+    const config = await response.json();
+    client = createClient(config.url, config.key, { auth: { flowType:'pkce', storageKey:'signal-arc-auth' } });
+    return client;
+  })().catch(error => { initializing = null; throw error; });
+  return initializing;
 }
 export async function api(path: string, init?: RequestInit) {
   let token: string | undefined;

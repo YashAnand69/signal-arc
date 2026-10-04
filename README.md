@@ -26,7 +26,7 @@ node scripts/verify-live.mjs
 
 The last command creates isolated verification workspaces against the deployed API, exercises the complete guest flow and cross-session access controls, then clears its test data. Set `SIGNAL_ARC_URL` to verify a different deployment.
 
-`npm run dev` previews the interface. Full-stack API testing requires the Vercel runtime and configured server environments; a failed API is displayed explicitly rather than silently substituting a demo.
+`npm run dev` previews the interface. To test guest features locally against the deployed API, use `SIGNAL_ARC_API_PROXY=https://signal-arc-yash.vercel.app npm run dev`. This opt-in proxy uses the live database; use disposable test data. Full-stack API testing requires the Vercel runtime and configured server environments; a failed API is displayed explicitly rather than silently substituting a demo.
 
 ## Deployment and operations
 
