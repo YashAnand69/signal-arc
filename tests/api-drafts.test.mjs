@@ -21,7 +21,8 @@ test('draft edits persist only within the current session', async () => {
   const calls = [];
   globalThis.fetch = async (url, init = {}) => {
     calls.push({ url: String(url), method: init.method || 'GET', body: init.body });
-    if (String(url).includes('/signal_sessions')) return new Response('', { status: 201 });
+    if (String(url).includes('/signal_sessions')) return init.method === 'POST' ? new Response('', { status: 201 }) : Response.json([{user_id:null}]);
+    if (String(url).includes('/signal_usage')) return init.method === 'POST' ? new Response('', {status:201}) : Response.json([]);
     if (String(url).includes('/signal_jobs')) return Response.json([{ id: '33333333-3333-4333-8333-333333333333', slug: 'sample', company: 'Example', role: 'Engineer', location: 'Remote', kind: 'Full-time', salary: 'Not listed', description: 'Sample role', tags: [], accent: '#d5ff55' }]);
     if (String(url).includes('/signal_drafts') && init.method === 'PATCH') return Response.json([{ id: draftId, session_id: sessionId, job_id: '33333333-3333-4333-8333-333333333333', body: updatedText, status: 'reviewed' }]);
     throw new Error(`Unexpected database call: ${url}`);
