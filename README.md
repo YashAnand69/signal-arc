@@ -6,7 +6,7 @@ Live: https://signal-arc-yash.vercel.app/
 
 ## Features
 
-- Google sign-in with Supabase Auth, plus email sign-in links. Guest work transfers to the account on sign-in; signed-in work is available across devices.
+- Google sign-in with Supabase Auth. Guest work transfers to the account on sign-in; signed-in work is available across devices.
 - Browser-side PDF, DOCX, TXT and Markdown resume import, or direct text entry. Files are not uploaded: the user reviews extracted text before saving it.
 - Private custom roles with original listing links, searchable alongside four explicitly labeled sample roles.
 - Explainable skill-coverage matching with matched and missing evidence. Scores are deterministic comparisons, not hiring predictions or live-market recommendations.
@@ -34,6 +34,6 @@ GitHub main automatically deploys to the linked Vercel project. Set `SUPABASE_UR
 
 The database is shared with Flowline; Signal Arc uses its own `signal_*` tables. RLS is enabled and direct anon/authenticated table access is revoked. API ownership filters are enforced for guest and account workspaces. The claim function is invoker-security and executable only by the service role.
 
-Google is configured with the exact allowed return URL `https://signal-arc-yash.vercel.app/`. Email links rely on the Supabase email provider; its default service has delivery restrictions, so Google is the primary public sign-in method. Production email delivery at scale needs a custom SMTP service. Free Supabase projects can pause after inactivity; `/api/health` verifies the database rather than returning an unconditional success.
+Google is configured with the exact allowed return URL `https://signal-arc-yash.vercel.app/`. Free Supabase projects can pause after inactivity; `/api/health` verifies the database rather than returning an unconditional success.
 
 No paid AI model, scraped job feed, automated applications, billing, or promised employment outcomes are implied. Matching and drafting are deterministic, transparent tools for the user's review.
