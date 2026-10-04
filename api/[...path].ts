@@ -54,7 +54,7 @@ async function webHandler(request: Request) {
     const jobs = await getJobs(sessionId);
     if (request.method === 'GET' && (path === '' || path === 'bootstrap' || path === 'export')) {
       const [profiles, analysis, drafts, usage, applications] = await Promise.all([db(`signal_profiles?select=*&session_id=eq.${sessionId}&limit=1`),db(`signal_analysis?select=*&session_id=eq.${sessionId}`),db(`signal_drafts?select=*&session_id=eq.${sessionId}&order=created_at.desc`),db(`signal_usage?select=units&session_id=eq.${sessionId}`),db(`signal_applications?select=*&session_id=eq.${sessionId}&order=updated_at.desc`)]);
-      return json({ profile:profiles[0]||null,jobs,analysis,drafts,applications,user:user?{email:user.email,id:user.id}:null,usageCount:usage.reduce((sum:number,item:any)=>sum+item.units,0)},200,cookie);
+      const payload={profile:profiles[0]||null,jobs,analysis,drafts,applications,user:user?{email:user.email,id:user.id}:null,usageCount:usage.reduce((sum:number,item:any)=>sum+item.units,0)};return json(path==='export'?JSON.parse(JSON.stringify(payload,(key,value)=>['session_id','user_id'].includes(key)?undefined:value)):payload,200,cookie);
     }
     const recent = await db(`signal_usage?select=id&session_id=eq.${sessionId}&created_at=gte.${encodeURIComponent(new Date(Date.now()-60000).toISOString())}`);
     if(recent.length >= 30) return json({error:'Please wait a minute before making more changes.'},429,cookie);
