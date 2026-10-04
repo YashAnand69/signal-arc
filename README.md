@@ -1,6 +1,6 @@
 # Signal Arc
 
-A complete career workspace: import a resume, compare opportunities against actual skill evidence, review application drafts, and track the search. The restrained Three.js background follows scroll and the active workspace without competing with the content.
+A complete career workspace: import a resume, compare opportunities against actual skill evidence, review application drafts, and track the search. A restrained Three.js evidence graph quietly aligns on scroll and stops rendering when movement settles.
 
 Live: https://signal-arc-yash.vercel.app/
 
@@ -9,10 +9,10 @@ Live: https://signal-arc-yash.vercel.app/
 - Google sign-in with Supabase Auth. Guest work transfers to the account on sign-in; signed-in work is available across devices.
 - Browser-side PDF, DOCX, TXT and Markdown resume import, or direct text entry. Files are not uploaded: the user reviews extracted text before saving it.
 - Private custom roles with original listing links, searchable alongside four explicitly labeled sample roles.
-- Explainable skill-coverage matching with matched and missing evidence. Scores are deterministic comparisons, not hiring predictions or live-market recommendations.
-- Editable application drafts grounded in listed skills. Achievement placeholders must be replaced before marking a draft reviewed. Drafts can be copied or downloaded; nothing is sent automatically.
-- Application tracker with saved, applied, interview, offer and closed stages, private notes, deadlines, and CSV export.
-- JSON workspace export, clear-workspace controls, private role removal, connection/error states, and server-side input validation.
+- Canonical skill aliases, exact bounded résumé evidence passages, and explainable skill-coverage matching with matched and missing evidence. Scores are deterministic comparisons, not hiring predictions or live-market recommendations.
+- Editable application drafts grounded in listed skills, with preserved fresh versions and warnings after résumé updates. Unsaved draft edits survive workspace navigation in memory. Achievement placeholders must be replaced before marking a draft reviewed. Drafts can be copied or downloaded; nothing is sent automatically.
+- Application tracker with search, stage filters, deadline urgency, in-memory edit recovery and saved, applied, interview, offer and closed stages, private notes, deadlines, and CSV export.
+- JSON workspace export, transactional clear-workspace controls, private role removal, connection/error states, and server-side input validation.
 - Persistent Supabase PostgreSQL storage behind a Vercel API. Google access tokens are verified server-side. Guest cookies are opaque, HttpOnly, Secure UUIDs. Account workspace IDs cannot be accessed using a guest cookie.
 
 ## Verification
@@ -37,3 +37,5 @@ The database is shared with Flowline; Signal Arc uses its own `signal_*` tables.
 Google is configured with the exact allowed return URL `https://signal-arc-yash.vercel.app/`. Free Supabase projects can pause after inactivity; `/api/health` verifies the database rather than returning an unconditional success.
 
 No paid AI model, scraped job feed, automated applications, billing, or promised employment outcomes are implied. Matching and drafting are deterministic, transparent tools for the user's review.
+
+Workspace views are addressable through `?view=overview|signal|desk|tracker|api`. Role drawers support keyboard focus trapping and Escape. Unsaved changes warn before reload; in-memory edit buffers are not a substitute for saving. Guest claims invalidate previous fit scores so results cannot describe a different résumé.
