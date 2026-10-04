@@ -89,3 +89,24 @@
 @media(max-width:1000px){.hero{min-height:0;grid-template-columns:1fr;padding-top:35px}.hero-visual{top:auto;height:560px;min-height:0}.hero-intro{min-height:0;padding-bottom:80px}.hero-track .track-item{min-height:250px}.hero h1{font-size:clamp(66px,11vw,104px)}}
 @media(max-width:650px){.hero{padding-top:15px}.hero-visual{height:460px}.visual-frame{border-radius:24px}.scene-chapter{left:26px;right:26px;bottom:28px}.scene-chapter strong{font-size:31px}.orbit-topline{top:26px}.hero h1{font-size:clamp(55px,14vw,86px)}.hero-intro{padding-top:42px;padding-bottom:55px}.hero-track .track-item{min-height:210px}.hero-actions .micro{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.hero-intro .eyebrow,.hero-intro h1,.hero-intro .lede,.hero-intro .hero-actions,.hero-proof{animation:none}.track-item{opacity:1;transform:none;transition:none}.primary svg{transition:none}}
+
+/* A continuous, quiet signal behind the product. */
+.app-shell{position:relative;isolation:isolate;background:#0b0e12}
+.ambient-signal{position:fixed;inset:70px -5vw 0 auto;width:64vw;z-index:-1;pointer-events:none;opacity:.72;mask-image:linear-gradient(90deg,transparent,#000 24%,#000 85%,transparent)}
+.ambient-signal .orbit-scene{position:absolute;inset:0;cursor:default;touch-action:auto}
+.hero{grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:1540px;align-items:start}
+.hero-copy{grid-column:1;max-width:610px}.hero-intro{min-height:670px}
+.hero h1{font-size:clamp(64px,6.8vw,104px)}
+.hero-track{max-width:490px}.track-item{min-height:240px}
+.hero-index{grid-column:1/-1}.hero-actions .micro{color:#748078}
+.primary{background:#c5d5b8;box-shadow:none;color:#17201a}.primary:hover{background:#d4dfcc;box-shadow:0 8px 26px #0003}
+.pulse{background:#b8c9aa;box-shadow:0 0 0 4px #b8c9aa12}
+.ticker{background:#0b0e12b8;backdrop-filter:blur(12px)}
+.workspace{position:relative;background:#0b0e1299;backdrop-filter:blur(5px)}
+.sidebar{background:#0b0e12b3}.work-surface{background:transparent}
+.job-card{background:#11171be8}.job-card:hover{transform:translateY(-3px)}
+.side-nav button.selected{background:#c5d5b810;color:#c5d5b8;border-color:#c5d5b82b}
+@media(max-width:1000px){.ambient-signal{width:78vw;right:-24vw;opacity:.35}.hero{display:block;min-height:0}.hero-copy{max-width:660px}.hero-intro{min-height:560px}.hero-track{max-width:none}.hero-track .track-item{min-height:220px}}
+@media(max-width:650px){.ambient-signal{inset:66px -48vw 0 auto;width:130vw;opacity:.2;mask-image:linear-gradient(90deg,transparent,#000 50%,#000)}.hero-intro{min-height:560px}.hero h1{font-size:clamp(55px,14vw,86px)}.hero-track .track-item{min-height:200px}.workspace{backdrop-filter:none;background:#0b0e12dd}}
+
+.hero-actions .primary{box-shadow:none;filter:none}.hero-actions .primary:hover{box-shadow:0 8px 24px #0003}
