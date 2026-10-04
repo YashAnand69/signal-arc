@@ -1,124 +1,184 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-const palette = [0xd5ff55, 0xff906b, 0xa894ff, 0x71dfff];
+const chapters = ['Discover', 'Expand', 'Align'];
 
 export function OrbitScene() {
   const hostRef = useRef<HTMLDivElement>(null);
   const [fallback, setFallback] = useState(false);
-
+  const [chapter, setChapter] = useState(0);
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
-    camera.position.z = 10.8;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     let renderer: THREE.WebGLRenderer;
-    try { renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' }); }
+    try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' }); }
     catch { setFallback(true); return; }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-    renderer.setClearColor(0x000000, 0);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.35;
-    host.appendChild(renderer.domElement);
+    renderer.toneMappingExposure = 1.1;
+    host.prepend(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#0b1013');
+    const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 60);
+    camera.position.set(0, 0.2, 9.6);
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const room = new RoomEnvironment();
+    const environment = pmrem.fromScene(room, 0.04);
+    scene.environment = environment.texture;
+    room.dispose();
+    pmrem.dispose();
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.22, 0.3, 1.4);
+    composer.addPass(bloom);
+    composer.addPass(new OutputPass());
+    const light = new THREE.DirectionalLight('#efffe7', 2);
+    light.position.set(3, 5, 4); scene.add(light);
+    const violetLight = new THREE.PointLight('#b3a1ff', 12, 15);
+    violetLight.position.set(-3, -1, 3); scene.add(violetLight);
+    const limeLight = new THREE.PointLight('#d5ff55', 10, 12);
+    limeLight.position.set(2, 2, -2); scene.add(limeLight);
 
-    scene.add(new THREE.AmbientLight(0xb8c8ff, 1.5));
-    const key = new THREE.PointLight(0xd5ff55, 42, 15);
-    key.position.set(2.3, 2.6, 4);
-    scene.add(key);
-    const fill = new THREE.PointLight(0x8878ff, 25, 12);
-    fill.position.set(-3, -1, -1);
-    scene.add(fill);
-
-    const world = new THREE.Group();
-    scene.add(world);
-    const core = new THREE.Group();
-    world.add(core);
-    core.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.92, 4), new THREE.MeshPhysicalMaterial({ color: 0x203028, emissive: 0x153318, emissiveIntensity: 0.32, metalness: 0.34, roughness: 0.21, transparent: true, opacity: 0.55, depthWrite: false, flatShading: true, clearcoat: 1 })));
-    core.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(0.94, 2)), new THREE.LineBasicMaterial({ color: 0xe4ffb5, transparent: true, opacity: 0.57 })));
-    const heart = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 1), new THREE.MeshBasicMaterial({ color: 0xd5ff55 }));
-    core.add(heart);
-
-    const halos = new THREE.Group();
-    world.add(halos);
-    [1.55, 2.15, 2.8].forEach((radius, index) => {
+    const sculpture = new THREE.Group(); scene.add(sculpture);
+    const chrome = new THREE.MeshPhysicalMaterial({ color: '#c3cec7', metalness: 1, roughness: 0.16, envMapIntensity: 1.1, clearcoat: 1, side: THREE.DoubleSide });
+    const darkChrome = new THREE.MeshPhysicalMaterial({ color: '#31443c', metalness: 0.92, roughness: 0.23, envMapIntensity: 1.0, side: THREE.DoubleSide });
+    const emissive = new THREE.MeshStandardMaterial({ color: '#d5ff55', emissive: '#d5ff55', emissiveIntensity: 1.3, metalness: 0.4, roughness: 0.3 });
+    const heart = new THREE.Group(); sculpture.add(heart);
+    const knot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.65, 0.19, 180, 24, 2, 3), chrome);
+    knot.rotation.set(0.6, 0.4, 0.2); heart.add(knot);
+    const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(0.28, 1), emissive); heart.add(inner);
+    const cage = new THREE.Group(); sculpture.add(cage);
+    const pieces: { mesh: THREE.Mesh; normal: THREE.Vector3; center: THREE.Vector3 }[] = [];
+    const shell = new THREE.IcosahedronGeometry(1.3, 1);
+    const vertices = shell.getAttribute('position');
+    for (let i = 0; i < vertices.count; i += 3) {
+      const a = new THREE.Vector3().fromBufferAttribute(vertices, i);
+      const b = new THREE.Vector3().fromBufferAttribute(vertices, i + 1);
+      const c = new THREE.Vector3().fromBufferAttribute(vertices, i + 2);
+      const center = a.clone().add(b).add(c).divideScalar(3);
+      const normal = center.clone().normalize();
+      const geometry = new THREE.BufferGeometry();
+      const coords: number[] = [];
+      for (const point of [a, b, c]) coords.push(...point.sub(center).multiplyScalar(0.78).toArray());
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3));
+      geometry.computeVertexNormals();
+      const material = i % 12 === 0 ? emissive : (i % 6 === 0 ? chrome : darkChrome);
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.copy(center);
+      cage.add(mesh); pieces.push({ mesh, normal, center });
+    }
+    shell.dispose();
+    const rings: THREE.Group[] = [];
+    [1.8, 2.25, 2.7].forEach((radius, index) => {
       const group = new THREE.Group();
-      group.rotation.set(0.58 + index * 0.42, -0.3 + index * 0.62, 0.22 - index * 0.42);
-      group.add(new THREE.Mesh(new THREE.TorusGeometry(radius, index === 1 ? 0.012 : 0.007, 6, 240), new THREE.MeshBasicMaterial({ color: palette[index], transparent: true, opacity: index === 1 ? 0.48 : 0.31, depthWrite: false })));
-      const arc = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.019, 8, 100, Math.PI * (0.34 + index * 0.08)), new THREE.MeshBasicMaterial({ color: palette[index], transparent: true, opacity: 0.95, depthWrite: false }));
-      arc.rotation.z = index * 2.1;
-      group.add(arc);
-      halos.add(group);
+      group.rotation.set(0.7 + index * 0.7, index * 0.9, index * 0.3);
+      const metalRing = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.048 - index * 0.008, 12, 180, Math.PI * 1.72), chrome);
+      group.add(metalRing);
+      const signalArc = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.018, 8, 100, Math.PI * 0.32), index === 1 ? new THREE.MeshStandardMaterial({ color: '#baaaff', emissive: '#a38bff', emissiveIntensity: 1.5 }) : emissive);
+      signalArc.rotation.z = Math.PI * 1.72;
+      group.add(signalArc);
+      for (let n = 0; n < 24; n++) {
+        const angle = n / 24 * Math.PI * 2;
+        const tick = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.11, 0.018), darkChrome);
+        tick.position.set(Math.cos(angle) * (radius + 0.12), Math.sin(angle) * (radius + 0.12), 0);
+        tick.rotation.z = angle - Math.PI / 2; group.add(tick);
+      }
+      sculpture.add(group); rings.push(group);
     });
-
-    const satellites = new THREE.Group();
-    world.add(satellites);
-    for (let index = 0; index < 12; index += 1) {
-      const angle = index * 2.399963;
-      const radius = 1.65 + (index % 4) * 0.36;
-      const size = index % 4 === 0 ? 0.105 : 0.043;
-      const node = new THREE.Mesh(new THREE.SphereGeometry(size, 14, 14), new THREE.MeshBasicMaterial({ color: palette[index % palette.length] }));
-      node.position.set(Math.cos(angle) * radius, Math.sin(angle * 1.4) * 0.68, Math.sin(angle) * radius * 0.6);
-      satellites.add(node);
+    const dustGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(360 * 3);
+    for (let i = 0; i < 360; i++) {
+      const angle = i * 2.399963;
+      const radius = 3 + (i % 41) / 41 * 3;
+      positions.set([Math.cos(angle) * radius, Math.sin(angle * 1.7) * radius, -2 - (i % 13) / 13 * 4], i * 3);
     }
-
-    const positions = new Float32Array(240 * 3);
-    for (let index = 0; index < 240; index += 1) {
-      const angle = index * 2.399963;
-      const radius = 2.2 + ((index * 37) % 100) / 100 * 2.4;
-      positions[index * 3] = Math.cos(angle) * radius;
-      positions[index * 3 + 1] = Math.sin(angle * 1.7) * radius * 0.62;
-      positions[index * 3 + 2] = Math.sin(angle) * 1.8 - 1.2;
-    }
-    const particleGeometry = new THREE.BufferGeometry();
-    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const particles = new THREE.Points(particleGeometry, new THREE.PointsMaterial({ color: 0xb9d4cb, size: 0.025, transparent: true, opacity: 0.52, depthWrite: false }));
-    scene.add(particles);
-
-    const pointer = new THREE.Vector2();
-    const targetPointer = new THREE.Vector2();
-    let drag = false, dragStartX = 0, dragStartY = 0, dragX = 0, dragY = 0, visible = true, scrollProgress = 0;
-    let frame = 0, last = performance.now();
-    const resize = () => { const { width, height } = host.getBoundingClientRect(); if (!width || !height) return; renderer.setSize(width, height, false); camera.aspect = width / height; camera.position.z = width < 520 ? 12 : 10.8; camera.updateProjectionMatrix(); };
-    const updateScroll = () => { const section = host.closest('.hero') || host; const rect = section.getBoundingClientRect(); scrollProgress = THREE.MathUtils.clamp((window.innerHeight - rect.top) / (window.innerHeight + rect.height), 0, 1); };
-    const onMove = (event: PointerEvent) => { const bounds = host.getBoundingClientRect(); targetPointer.x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2; targetPointer.y = ((event.clientY - bounds.top) / bounds.height - 0.5) * 2; if (drag) { dragX += (event.clientX - dragStartX) * 0.007; dragY += (event.clientY - dragStartY) * 0.007; dragStartX = event.clientX; dragStartY = event.clientY; } };
-    const onDown = (event: PointerEvent) => { drag = true; dragStartX = event.clientX; dragStartY = event.clientY; host.setPointerCapture(event.pointerId); host.classList.add('is-dragging'); };
-    const onUp = () => { drag = false; host.classList.remove('is-dragging'); };
-    const onLeave = () => { if (!drag) targetPointer.set(0, 0); };
-    const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }, { rootMargin: '150px' });
-    const resizeObserver = new ResizeObserver(resize);
-    observer.observe(host); resizeObserver.observe(host);
-    host.addEventListener('pointermove', onMove); host.addEventListener('pointerdown', onDown); host.addEventListener('pointerup', onUp); host.addEventListener('pointercancel', onUp); host.addEventListener('pointerleave', onLeave);
-    window.addEventListener('scroll', updateScroll, { passive: true });
-    updateScroll(); resize();
-
-    const animate = (now: number) => {
-      frame = requestAnimationFrame(animate);
-      if (!visible) { last = now; return; }
-      const dt = Math.min((now - last) / 1000, 0.05);
-      last = now;
-      pointer.lerp(targetPointer, reducedMotion.matches ? 1 : Math.min(1, dt * 3));
-      const motion = reducedMotion.matches ? 0 : 1;
-      world.rotation.y = THREE.MathUtils.damp(world.rotation.y, scrollProgress * Math.PI * 1.28 * motion + dragX + pointer.x * 0.24 * motion, 2.6, dt);
-      world.rotation.x = THREE.MathUtils.damp(world.rotation.x, -0.24 + scrollProgress * 0.78 * motion + dragY - pointer.y * 0.16 * motion, 2.6, dt);
-      world.position.y = THREE.MathUtils.damp(world.position.y, ((0.5 - scrollProgress) * 0.35 - pointer.y * 0.12) * motion, 2, dt);
-      core.rotation.y += dt * 0.27 * motion; core.rotation.x += dt * 0.14 * motion;
-      heart.scale.setScalar(1 + Math.sin(now * 0.0021) * 0.065 * motion);
-      halos.rotation.z = now * 0.000045 * motion; satellites.rotation.y = -now * 0.00011 * motion; particles.rotation.z = now * 0.000014 * motion;
-      renderer.render(scene, camera);
+    dustGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const dust = new THREE.Points(dustGeometry, new THREE.PointsMaterial({ color: '#95b3a8', size: 0.016, transparent: true, opacity: 0.65, depthWrite: false })); scene.add(dust);
+    const pointer = new THREE.Vector2(), targetPointer = new THREE.Vector2();
+    let scroll = 0, targetScroll = 0, dragX = 0, dragY = 0, down = false, x = 0, y = 0;
+    let frame = 0, last = performance.now(), elapsed = 0, active = true, disposed = false, currentChapter = -1;
+    const updateScroll = () => {
+      const section = host.closest('.hero') || host;
+      const rect = section.getBoundingClientRect();
+      targetScroll = THREE.MathUtils.clamp(-rect.top / Math.max(1, rect.height - window.innerHeight + 150), 0, 1);
     };
-    frame = requestAnimationFrame(animate);
+    const resize = () => {
+      const { width, height } = host.getBoundingClientRect();
+      if (!width || !height) return;
+      renderer.setSize(width, height, false); composer.setSize(width, height);
+      camera.aspect = width / height; camera.updateProjectionMatrix();
+    };
+    const onMove = (event: PointerEvent) => {
+      const rect = host.getBoundingClientRect();
+      targetPointer.set((event.clientX - rect.left) / rect.width * 2 - 1, (event.clientY - rect.top) / rect.height * 2 - 1);
+      if (down) { dragX += (event.clientX - x) * 0.006; dragY += (event.clientY - y) * 0.006; x = event.clientX; y = event.clientY; }
+    };
+    const onDown = (event: PointerEvent) => { if ((event.target as HTMLElement).closest('button')) return; down = true; x = event.clientX; y = event.clientY; host.setPointerCapture(event.pointerId); host.classList.add('is-dragging'); };
+    const onUp = () => { down = false; host.classList.remove('is-dragging'); };
+    const onLeave = () => { if (!down) targetPointer.set(0, 0); };
+    const animate = (now: number) => {
+      frame = 0;
+      if (!active || disposed) return;
+      const dt = Math.min((now - last) / 1000, 0.04); last = now;
+      const motion = reduced.matches ? 0 : 1;
+      elapsed += dt * motion;
+      scroll = THREE.MathUtils.damp(scroll, targetScroll, 4, dt);
+      pointer.lerp(targetPointer, Math.min(1, dt * 4));
+      const expansion = Math.sin(scroll * Math.PI) * motion;
+      const phase = Math.min(2, Math.floor(scroll * 3));
+      if (phase !== currentChapter) { currentChapter = phase; setChapter(phase); }
+      host.style.setProperty('--scene-progress', String(scroll));
+      sculpture.rotation.y = -0.35 + scroll * Math.PI * 1.65 * motion + dragX + pointer.x * 0.22 * motion;
+      sculpture.rotation.x = -0.18 + Math.sin(scroll * Math.PI * 2) * 0.38 * motion + dragY - pointer.y * 0.15 * motion;
+      sculpture.rotation.z = -0.18 + scroll * 0.3 * motion;
+      heart.rotation.y = elapsed * 0.17;
+      heart.rotation.z = elapsed * 0.08;
+      heart.scale.setScalar(0.95 + expansion * 0.25);
+      pieces.forEach(({ mesh, normal, center }, index) => {
+        mesh.position.copy(center).addScaledVector(normal, expansion * (0.85 + index % 3 * 0.1));
+        mesh.rotation.set(expansion * normal.y * 0.9, expansion * normal.x * 0.9, expansion * normal.z * 0.6);
+      });
+      rings.forEach((ring, index) => {
+        ring.rotation.x = THREE.MathUtils.lerp(0.7 + index * 0.7, 0.25 + index * 0.1, scroll) + Math.sin(elapsed * 0.16 + index) * 0.08;
+        ring.rotation.y = index * 0.9 * (1 - scroll) + expansion * 0.6;
+        ring.rotation.z = index * 0.3 + elapsed * (index % 2 ? -0.055 : 0.045);
+        ring.scale.setScalar(1 + expansion * 0.11);
+      });
+      const narrow = camera.aspect < 0.8;
+      camera.position.set(pointer.x * 0.22 * motion, 0.3 + expansion * 0.6, (narrow ? 13 : 11.8) - expansion * 0.6);
+      camera.lookAt(0, 0.1, 0);
+      dust.rotation.z = elapsed * 0.009;
+      composer.render();
+      frame = requestAnimationFrame(animate);
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      active = entry.isIntersecting && !document.hidden;
+      if (active && !frame) { last = performance.now(); frame = requestAnimationFrame(animate); }
+    }, { rootMargin: '100px' });
+    const onVisibility = () => { active = !document.hidden && host.getBoundingClientRect().bottom > 0; if (active && !frame) { last = performance.now(); frame = requestAnimationFrame(animate); } };
+    const resizer = new ResizeObserver(resize);
+    observer.observe(host); resizer.observe(host);
+    window.addEventListener('scroll', updateScroll, { passive: true });
+    document.addEventListener('visibilitychange', onVisibility);
+    host.addEventListener('pointermove', onMove); host.addEventListener('pointerdown', onDown); host.addEventListener('pointerup', onUp); host.addEventListener('pointercancel', onUp); host.addEventListener('pointerleave', onLeave);
+    updateScroll(); resize(); frame = requestAnimationFrame(animate);
     return () => {
-      cancelAnimationFrame(frame); observer.disconnect(); resizeObserver.disconnect();
-      host.removeEventListener('pointermove', onMove); host.removeEventListener('pointerdown', onDown); host.removeEventListener('pointerup', onUp); host.removeEventListener('pointercancel', onUp); host.removeEventListener('pointerleave', onLeave); window.removeEventListener('scroll', updateScroll);
-      scene.traverse((object) => { if (object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.LineSegments) { object.geometry.dispose(); const materials = Array.isArray(object.material) ? object.material : [object.material]; materials.forEach((material) => material.dispose()); } });
-      renderer.dispose(); renderer.domElement.remove();
+      disposed = true; cancelAnimationFrame(frame); observer.disconnect(); resizer.disconnect();
+      window.removeEventListener('scroll', updateScroll); document.removeEventListener('visibilitychange', onVisibility);
+      host.removeEventListener('pointermove', onMove); host.removeEventListener('pointerdown', onDown); host.removeEventListener('pointerup', onUp); host.removeEventListener('pointercancel', onUp); host.removeEventListener('pointerleave', onLeave);
+      const materials = new Set<THREE.Material>();
+      scene.traverse((object) => { if (object instanceof THREE.Mesh || object instanceof THREE.Points) { object.geometry.dispose(); (Array.isArray(object.material) ? object.material : [object.material]).forEach((material) => materials.add(material)); } });
+      materials.forEach((material) => material.dispose()); environment.dispose(); bloom.dispose(); composer.dispose(); renderer.dispose(); renderer.domElement.remove();
     };
   }, []);
-
-  return <div ref={hostRef} className={`orbit-scene${fallback ? ' orbit-fallback' : ''}`} role="img" aria-label="Interactive three-dimensional career signal orbit. Drag to rotate; scroll to change perspective.">
+  return <div ref={hostRef} className={`orbit-scene${fallback ? ' orbit-fallback' : ''}`} aria-label="Interactive signal sculpture: scroll to discover, expand, and align; drag to rotate." role="img">
     {fallback && <div className="orbit-fallback-art" aria-hidden="true"><span/><span/><span/><b>✦</b></div>}
+    <div className="scene-chapter" aria-hidden="true"><span>0{chapter + 1}</span><strong>{chapters[chapter]}</strong><div className="scene-progress"><i/></div><small>SCROLL TO TRANSFORM</small></div>
   </div>;
 }
